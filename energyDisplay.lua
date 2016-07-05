@@ -1,8 +1,8 @@
--- Energieanzeige --
--- von Thor_s_Crafter --
+-- Energiy display --
+-- by Thor_s_Crafter --
 -- Version 1.1 --
 
---Globale Variablen
+--Global variables
 local mon
 local c
 local en
@@ -20,22 +20,25 @@ local inOut5 = 0
 local ioPre5
 local ioCol5
 
---Finde Monitor & Energiespeicher
+--Finds Monitor & energy storage
 function initPeripherals()
-  --Table fuer alle Peripherals
+
+  --Table for all peripherals
   local per = peripheral.getNames()
   
-  --Iteriert ueber die gefundenen Geraete
+  --Checks all attached peripherals
   for i=1,#per do
   
     --Monitor
     if peripheral.getType(per[i]) == "monitor" then
       mon = peripheral.wrap(per[i])
+
+      --Some global settings for the monitor
       x,y = mon.getSize()
       x2 = x/2
       mon.setBackgroundColor(colors.gray)
       
-    --Energiespeicher
+    --Energy storage
     elseif peripheral.getType(per[i]) == "draconic_rf_storage" then
       c = peripheral.wrap(per[i])
     elseif peripheral.getType(per[i]) == "tile_blockcapacitorbank_name" then
@@ -46,34 +49,35 @@ function initPeripherals()
   end
 end
 
+--Returns the current local time (formatted, 24h format)
 function getTime()
   local time = os.time()
   return textutils.formatTime(time, true)
 end
 
---Loescht den gesamten Bildschirm
+--Clears the entire screen and the terminal
 function clearAll()
   term.clear()
   term.setCursorPos(1,1)
   mon.clear()
 end
 
---Formatiert grosse Zahlenwerte in String (z.B. 1.000)
+--Formats big numbers into a string (e.g. 1000 -> 1.000)
 function format(value)
-  --Werte kleiner 1000 muessen nicht formatiert werden
+
+  --Values smaller 1000 doesn't need to be formatted
   if value < 1000 then return value end
   
-  --Legt Berechnungsvariablen fest
+  --Some calculation variables
   local array = {}
   local vStr = tostring(value)
   local len = string.len(vStr)
   local modulo = math.fmod(len,3)
   
-  --Speichert einzelne Ziffern in einem Array ab
+  --Saves digits into a table (array)
   for i=1,len do array[i] = string.sub(vStr,i,i) end
   
-  --Legt (max. 2) Ziffern am Anfang in ein extra Array und entfernt
-  --Diese aus dem alten Array
+  --Moves additional digits into a second table (array)
   local array2 = {}
   if modulo ~= 0 then
     for i=1,modulo do
@@ -82,86 +86,99 @@ function format(value)
     end
   end
   
-  --Fuegt die Punkte als Feld im ersten Array ein
+  --Adds the dots into the first array
   for i=1,#array+1,4 do
     table.insert(array,i,".")
   end
   
-  --Fuegt beide Arrays zusammen
+  --Merges both arrays
   for i=#array2,1,-1 do table.insert(array,1,array2[i]) end
-  if modulo == 0 then table.remove(array,1) end --Entfernt ggf. Punkt am Anfang
+  if modulo == 0 then table.remove(array,1) end --Removes front dots
   
-  --Wandelt alles in einen String zurueck und gibt diesen zurueck
+  --Converts everything into a string and returns it
   local final = ""
   for k,v in pairs(array) do final = final..v end
   return final
 end
 
---Liest die aktullen Energiewerte aus
+--Getts the current energy values
 function getEnergy()
   en = c.getEnergyStored()
   enMax = c.getMaxEnergyStored()
   enPer = math.floor(en/enMax*100)
 
-  --Debug
+  --Debug prints
   term.setCursorPos(1,1)
   print("En: "..en)
   print("EnMax: "..enMax)
   print("EnPer: "..enPer)
 end
 
---Berechnet Energieveraenderungen (Intervall: 1s)
+--Calculates energy changes (interval: 1s)
 function getInOut()
-  --Erster Wert
+
+  --First value
   getEnergy()
   local tmp1 = en
   sleep(0.5)
   
-  --Zweiter Wert
+  --Second value
   getEnergy()
   local tmp2 = en
   
-  --Differenz beider Werte
+  --Calculates the difference of both values
   local inOutTmp = math.floor((tmp2-tmp1)/10)
 
-  --Setzt inOut (final)
+  --Sets inOut (finally)
   inOut = inOutTmp
 
-  --Debug
+  --Debug prints
   term.setCursorPos(1,4)
   print("tmp1: "..tmp1)
   print("tmp2: "..tmp2)
   print("inOutTmp: "..inOutTmp)
   print("inOut: "..inOut)
 
-  --Setzt die Textfarbe
+  --Sets the text color & the prefix
   if inOut > 0 then ioCol = colors.green ioPre = "+"
   elseif inOutTmp < 0 then ioCol = colors.red ioPre = "-"
   elseif inOutTmp == 0 then ioCol = colors.white ioPre = "+/-" end
 end
 
---Berechnet Energieveraenderungen (Intervall: 5s)
+--Calculates energy changes (interval: 5s)
 function getInOut5()
-  getEnergy()
+  getEnergy() --Gets the current energy
+
+  --Gets the first value at time code 0
   if timerVar == 0 then
     ioTmp1 = en
     timerVar = timerVar + 1
+
+  --Gets the second value at time code 10 (= 5s)
   elseif timerVar == 10 then
     timerVar = 0
     ioTmp2 = en
+
+    --Sets inOut5
     inOut5 = math.floor((ioTmp2 - ioTmp1)/100)
+  
+  --Increments timer
   else
     timerVar = timerVar + 1
   end
+
+  --Debug print
   term.setCursorPos(1,8)
   print("inOut5: "..inOut5)
+
+  --Sets the text color and the prefix
   if inOut5 > 0 then ioCol5 = colors.green ioPre5 = "+"
   elseif inOut5 < 0 then ioCol5 = colors.red ioPre5 = "-"
   elseif inOut5 == 0 then ioCol5 = colors.white ioPre5 = "+/-" end
 end
 
 
---Zeichnet eine Energieleiste
+--Draws the energy bar
 function printBar()
   local part1 = enPer/5
   mon.setCursorPos(x2-10,5)
@@ -175,9 +192,10 @@ function printBar()
   mon.setTextColor(colors.white)
 end
 
---Gibt saemtliche Daten auf dem Bildschirm aus
+--Prints all data onto the screen
 function printStats()
-  --Ueberschrift
+
+  --Caption
   mon.setCursorPos(1,1)
   mon.write("Energieanzeige")
   local time = getTime()
@@ -189,27 +207,27 @@ function printStats()
     mon.write("-")
   end
  
-  --Energie (in % + Energieleiste)
+  --Energy (in % + the energy bar)
   mon.setCursorPos(x2-2,4)
   mon.write(enPer.."%  ")
   printBar()
   
-  --Energie (total)
+  --Energy (current)
   mon.setCursorPos(1,7)
   mon.write("Total: "..format(en).."RF         ")
   
-  --Energie (max.)
+  --Energy (max)
   mon.setCursorPos(1,8)
   mon.write("Gesamt: "..format(enMax).."RF   ")
   
-  --Energie (In/Out)
+  --Energy (In/Out)
   mon.setCursorPos(1,10)
   mon.write("In/Out: ")
   mon.setTextColor(ioCol)
   mon.write(ioPre..format(math.abs(inOut)).."RF/t      ")
   mon.setTextColor(colors.white)
 
-   --Energie (In/Out)(5s.)
+   --Energy (In/Out)(5s)
   mon.setCursorPos(1,11)
   mon.write("In/Out (5s): ")
   mon.setTextColor(ioCol5)
@@ -217,10 +235,11 @@ function printStats()
   mon.setTextColor(colors.white)
 end
 
---Programmstart
+--Start
 initPeripherals()
 clearAll()
---Hauptschleife
+
+--Main loop
 while true do
   getEnergy()
   getInOut()
