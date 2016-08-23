@@ -200,7 +200,7 @@ function printStats()
   mon.write("Energieanzeige")
   local time = getTime()
   mon.setCursorPos((x-string.len(time)-1),1)
-  mon.write(time.."h")
+  mon.write(" "..time.."h")
 
   mon.setCursorPos(1,2)
   for i=1,x do
