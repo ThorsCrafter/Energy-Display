@@ -1,6 +1,6 @@
--- Energiy display --
+-- Energy display --
 -- by Thor_s_Crafter --
--- Version 1.1 --
+-- Version 1.2 --
 
 --Global variables
 local mon
@@ -36,7 +36,7 @@ function initPeripherals()
       --Some global settings for the monitor
       x,y = mon.getSize()
       x2 = x/2
-      mon.setBackgroundColor(colors.gray)
+      mon.setBackgroundColor(colors.black)
       
     --Energy storage
     elseif peripheral.getType(per[i]) == "draconic_rf_storage" then
@@ -47,12 +47,6 @@ function initPeripherals()
       c = peripheral.wrap(per[i])
     end
   end
-end
-
---Returns the current local time (formatted, 24h format)
-function getTime()
-  local time = os.time()
-  return textutils.formatTime(time, true)
 end
 
 --Clears the entire screen and the terminal
@@ -142,7 +136,7 @@ function getInOut()
   --Sets the text color & the prefix
   if inOut > 0 then ioCol = colors.green ioPre = "+"
   elseif inOutTmp < 0 then ioCol = colors.red ioPre = "-"
-  elseif inOutTmp == 0 then ioCol = colors.white ioPre = "+/-" end
+  elseif inOutTmp == 0 then ioCol = colors.white ioPre = "" end
 end
 
 --Calculates energy changes (interval: 5s)
@@ -174,7 +168,7 @@ function getInOut5()
   --Sets the text color and the prefix
   if inOut5 > 0 then ioCol5 = colors.green ioPre5 = "+"
   elseif inOut5 < 0 then ioCol5 = colors.red ioPre5 = "-"
-  elseif inOut5 == 0 then ioCol5 = colors.white ioPre5 = "+/-" end
+  elseif inOut5 == 0 then ioCol5 = colors.white ioPre5 = "" end
 end
 
 
@@ -197,10 +191,7 @@ function printStats()
 
   --Caption
   mon.setCursorPos(1,1)
-  mon.write("Energieanzeige")
-  local time = getTime()
-  mon.setCursorPos((x-string.len(time)-1),1)
-  mon.write(" "..time.."h")
+  mon.write("Energy Display")
 
   mon.setCursorPos(1,2)
   for i=1,x do
@@ -214,24 +205,24 @@ function printStats()
   
   --Energy (current)
   mon.setCursorPos(1,7)
-  mon.write("Total: "..format(en).."RF         ")
+  mon.write("Total: "..format(en).." RF")
   
   --Energy (max)
   mon.setCursorPos(1,8)
-  mon.write("Gesamt: "..format(enMax).."RF   ")
+  mon.write("Capacity: "..format(enMax).." RF")
   
   --Energy (In/Out)
   mon.setCursorPos(1,10)
   mon.write("In/Out: ")
   mon.setTextColor(ioCol)
-  mon.write(ioPre..format(math.abs(inOut)).."RF/t      ")
+  mon.write(ioPre..format(math.abs(inOut)).." RF/t          ")
   mon.setTextColor(colors.white)
 
    --Energy (In/Out)(5s)
   mon.setCursorPos(1,11)
   mon.write("In/Out (5s): ")
   mon.setTextColor(ioCol5)
-  mon.write(ioPre5..format(math.abs(inOut5)).."RF/t      ")
+  mon.write(ioPre5..format(math.abs(inOut5)).." RF/t          ")
   mon.setTextColor(colors.white)
 end
 
